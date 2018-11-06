@@ -29,6 +29,14 @@ IsPerson False = Object
 
 -- A function that calculates the correct return type.
 isPerson : (x : Bool) -> IsPerson x
-isPerson True = P "Donovan Crichton" 33
+isPerson True = Main.P "Donovan Crichton" 33
 isPerson False = O Cheese
+
+f : (x : Bool ** IsPerson x)
+f = (_ ** isPerson True)
   
+g : Num a => (n : Nat ** Vec n a)
+g = (_ ** [1, 2, 3])
+
+len : Num a => Vec n a -> (n : Nat ** Vec n a)
+len x = (_ ** x)

@@ -8,6 +8,9 @@
 \usepackage{hyperref}
 \usetikzlibrary{arrows,automata}
 
+\setbeamertemplate{footline}[frame number]
+\setbeamertemplate{navigation symbols}{}
+
 \title{A Dependently-Typed Zipper over GADT-Embedded ASTs}
 \author{Donovan Crichton}
 \date{November 2018}
@@ -115,13 +118,69 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{A refresher on dependent type 5.}
+  \frametitle{A refresher on dependent types 5.}
   \begin{block}{$\Sigma$ types.}
   \begin{itemize}
     \item $\Sigma$ types are a pairing of a value, and a type that
-            depends on that value.
+            depends on that value (They are also called dependent
+                  pairs).
+    \item $\Sigma$ types are useful when you want some basic type
+            inference around dependent types!
+    \item In Idris it is difficult to extract either size of a $\Sigma$
+          type pair. Particularly when that pair is under a
+          constructor.
+    \item Due to the dependent nature of the
+            \mintinline{haskell}{fst} and \mintinline{haskell}{snd}
+            functions on dependent pairs, they cannot be used with
+            ordinary maps, folds, binds etc.
   \end{itemize}
   \end{block}
 \end{frame}
 
+\begin{frame}[fragile]
+  \frametitle{A refresher on dependent types 6.}
+  \begin{block}{An example using $\Sigma$ types in Idris.}
+  \begin{minted}[fontsize=\small]{haskell}
+  data DPair : (a : Type) -> (P : a -> Type) -> Type where
+    MkDPair : (x : a) -> (pf : P x) -> DPair a P
+
+  -- also has some syntactic sugar in Idris.
+  f : (x : Bool ** IsPerson x)
+  f = (_ ** isPerson True)
+
+  g : Num a => (n : Nat ** Vec n a)
+  g = (_ ** [1, 2, 3])
+
+  -- this is particularly useful if we are passing a vector
+  -- of unknown length in as an argument.
+  len : Num a => Vec n a -> (x : Nat ** Vec x a)
+  len x = (_ ** x)
+
+  -- len [1, 2, 3] returns
+  -- (3 ** [1, 2, 3]) : (x : Nat ** Vec x Integer)
+  \end{minted}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A refresher on dependent types 7.}
+  \begin{block}{Why are $\Sigma$ and $\Pi$ good?}
+  \begin{itemize}
+    \item It turns out that the curry-howard isomorphsim
+      still holds with the introduction of dependent types.
+    \item Lets say we have some proof $P$ $x$, using a
+      dependent-data-type or a $\Pi$ type is saying $\forall x, P$ $x$.
+      Using a $\Sigma$ type is saying $\exists x, P$ $x$.
+    \item This brings the isomorphic logic from propositional logic
+      to first-order or predicate logic, allowing us to write proofs
+      in our code!
+  \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Dependent data-type embedded DSLs}
+  \begin{block}{test}
+  \end{block}
+\end{frame}
 \end{document}
