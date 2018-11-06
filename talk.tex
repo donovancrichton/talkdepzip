@@ -1,0 +1,127 @@
+\documentclass{beamer}
+\usepackage[utf8]{inputenc}
+
+\usepackage{minted}
+\usepackage{pgf}
+\usepackage{tikz}
+\usepackage{upquote}
+\usepackage{hyperref}
+\usetikzlibrary{arrows,automata}
+
+\title{A Dependently-Typed Zipper over GADT-Embedded ASTs}
+\author{Donovan Crichton}
+\date{November 2018}
+
+\begin{document}
+ 
+\frame{\titlepage}
+
+\begin{frame}[fragile]
+  \frametitle{Preliminaries}
+  \begin{itemize}
+    \item \textbf{Slides and examples available at:}
+    \url{https://github.com/donovancrichton/talkdepzip.git}
+  \item \textbf{About me:}
+    \begin{itemize}
+      \item Honours 'year' student at Griffith University.
+      \item Working towards a type-correct genetic program through
+              dependently-typed functional programming.
+      \item About 18 months experience in FP, just under 12 with
+              dependent types.
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{A refresher on dependent types 1.}
+\begin{itemize}
+  \item The most basic definition is a dependent data type (GADT in
+          Haskell).
+  \item Dependent data-types depend on being parameterised over a
+        value for their construction.
+  \item Distinguished from parameterised ADTs by the ability to
+        specify the return type parameter of each data constructor.
+\end{itemize}
+\begin{minipage}{0.5\textwidth}
+\begin{block}{A vector dependent on a length value.}
+\begin{minted}[fontsize=\small,baselinestretch=1]{haskell}
+  data Nat = Z | S Nat
+
+  data Vec : (n : Nat) -> (e : Type) -> Type where
+    Nil : Vec Z e
+    (::) : (x : e) -> (xs : Vec n e) -> Vec (S Z) e
+\end{minted}
+\end{block}
+\end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A refresher on dependent types 2.}
+
+  \begin{block}{Why is this good?}
+   If our length forms part of our type, we gain the ability
+          to write correct functions with respect to vector length,
+          without having to explicitly check. 
+  \end{block}
+  \begin{block}{Adding some vectors.}
+  \begin{minted}[fontsize=\small]{haskell}
+    -- total
+    (+) : Num a => Vect n a -> Vect n a -> Vect n a
+    (+) [] [] = []
+    (+) (x :: xs) (y :: ys) = x + y :: xs + ys
+  \end{minted}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A refresher on dependent types 3.}
+  \begin{block}{$\Pi$ types.}
+    \begin{itemize}
+     \item The $\Pi$ type is a family of types that are indexed by a
+           value (hence type families in Haskell).
+     \item $\Pi$ types are used to calculate correct return types
+             when given a specified value.
+     \item In Idris $\Pi$ types only fully refine if the functions
+             requiring them are marked as total.
+     \item In Idris functions that return $\Pi$ types don't always refine in 
+             function composition, recursive calls or let bindings.
+     \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A refresher on dependent types 4.}
+  \begin{block}{An example of using $\Pi$ types in Idris.}
+  \begin{minted}[fontsize=\small]{haskell}
+  Age : Type
+  Age = Nat
+
+  Name : Type
+  Name = String
+
+  data Material = Plastic | Wood | Metal | Cheese
+  data Person = P Name Age
+  data Object = O Material
+
+  IsPerson : Bool -> Type
+  IsPerson True = Person
+  IsPerson False = Object
+
+  isPerson : (x : Bool) -> IsPerson x
+  isPerson True = P "Donovan Crichton" 33
+  isPerson False = O Cheese
+  \end{minted}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A refresher on dependent type 5.}
+  \begin{block}{$\Sigma$ types.}
+  \begin{itemize}
+    \item $\Sigma$ types are a pairing of a value, and a type that
+            depends on that value.
+  \end{itemize}
+  \end{block}
+\end{frame}
+
+\end{document}
