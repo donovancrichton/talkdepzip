@@ -126,7 +126,7 @@
                   pairs).
     \item $\Sigma$ types are useful when you want some basic type
             inference around dependent types!
-    \item In Idris it is difficult to extract either size of a $\Sigma$
+    \item In Idris it is difficult to extract either side of a $\Sigma$
           type pair. Particularly when that pair is under a
           constructor.
     \item Due to the dependent nature of the
@@ -316,5 +316,69 @@ data Context : Maybe Type -> Type where
 
 \begin{frame}[fragile]
   \frametitle{A dependently typed zipper 3.}
-  \begin{block}{
+  \begin{block}{Let's re-define the zipper.}
+    \begin{itemize}
+      \item We'd like to parameterise the zipper so that we can
+        perform operations on zippers that have holes (or focii) of
+        the same type.
+      \item `wrap' is provided to give us an easy way of creating a
+        $\Sigma$ type from a zipper, we wrap all this up in a `Maybe'
+        as some zipping operations may fail.
+    \end{itemize}
+  \begin{minted}[fontsize=\small]{haskell}
+data Zipper : Type -> Type where
+  Zip : Expr a -> Context (Just a) -> Zipper a
+
+wrap : Zipper a -> Maybe (a : Type ** Zipper a)
+wrap x = Just (_ ** x)
+  \end{minted}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A dependently typed zipper 4.}
+  \begin{block}{Re-defining the direction functions.}
+    \begin{minted}[fontsize=\small]{haskell}
+left : Maybe (a : Type ** Zipper a) 
+    -> Maybe (b : Type ** Zipper b)
+left Nothing = Nothing
+left (Just (x ** pf)) = 
+  case pf of
+    (Zip p@(Lit x) c) => Nothing
+    (Zip p@(Add x y) c) => Just (_ ** Zip x (L p c)) 
+    (Zip p@(Const x y) c) => Just (_ ** Zip x (L p c)) 
+
+right : Maybe (a : Type ** Zipper a) 
+     -> Maybe (b : Type ** Zipper b)
+right Nothing = Nothing
+right (Just (x ** pf)) = 
+  case pf of
+    (Zip p@(Lit x) c) => Nothing 
+    (Zip p@(Add x y) c) => Just (_ ** Zip y (R p c)) 
+    (Zip p@(Const x y) c) => Just (_ ** Zip y (R p c)) 
+     \end{minted}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A dependently typed zipper 5.}
+  \begin{block}{More direction functions.}
+    \begin{minted}[fontsize=\small]{haskell}
+up : Maybe (a : Type ** Zipper a) 
+  -> Maybe (b : Type ** Zipper b)
+up Nothing = Nothing
+up (Just (x ** pf)) =
+ case pf of
+  (Zip e Root) => Just (_ ** Zip e Root)
+  (Zip e (R (Lit x) pc)) impossible
+  (Zip e (R (Add x y) pc)) => Just (_ ** Zip (Add x e) pc)
+  (Zip e (R (Const x y) pc)) => Just (_ ** Zip (Const x e) pc)
+  (Zip e (L (Lit x) pc)) impossible
+  (Zip e (L (Add x y) pc)) => Just (_ ** Zip (Add e y) pc)
+  (Zip e (L (Const x y) pc)) => Just (_ ** Zip (Const e y) pc)
+    \end{minted}
+  \end{block}
+\end{frame}
+
+
 \end{document}
