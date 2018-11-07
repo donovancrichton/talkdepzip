@@ -61,7 +61,7 @@
 \begin{frame}[fragile]
   \frametitle{A refresher on dependent types 2.}
 
-  \begin{block}{Why is this good?}
+  \begin{block}{Why is this `good'?}
    If our length forms part of our type, we gain the ability
           to write correct functions with respect to vector length,
           without having to explicitly check. 
@@ -164,7 +164,7 @@
 
 \begin{frame}[fragile]
   \frametitle{A refresher on dependent types 7.}
-  \begin{block}{Why are $\Sigma$ and $\Pi$ good?}
+  \begin{block}{Why are $\Sigma$ and $\Pi$ `good'?}
   \begin{itemize}
     \item It turns out that the curry-howard isomorphsim
       still holds with the introduction of dependent types.
@@ -173,14 +173,148 @@
       Using a $\Sigma$ type is saying $\exists x, P$ $x$.
     \item This brings the isomorphic logic from propositional logic
       to first-order or predicate logic, allowing us to write proofs
-      in our code!
+      in our code (more on this later).
   \end{itemize}
   \end{block}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Dependent data-type embedded DSLs}
-  \begin{block}{test}
+  \frametitle{Dependent data-type embedded DSLs 1.}
+  \begin{block}{A quick review of DSLs}
+    \begin{itemize}
+      \item Short for Domain Specific Language.
+      \item Used in lots of places, salary calculations, query and
+        markup languages, business logic, etc.
+      \item Used very much in programming language research!
+    \end{itemize}
+  \end{block}
+  \begin{block}{A DDT (or GADT) embedded DSL}
+    \begin{minted}[fontsize=\small]{haskell}
+      data Expr : (a : Type) -> Type where
+        Lit   : a -> Expr a
+        Add   : Num a => Expr a -> Expr a -> Expr a
+        Const : Expr a -> Expr b -> Expr a
+    \end{minted}
   \end{block}
 \end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Dependent data-type embedded DSLs 2.}
+  \begin{block}{An embedded DSL and it's interpreter.}
+    \begin{minted}[fontsize=\small]{haskell}
+      data Expr : (a : Type) -> Type where
+        Lit   : a -> Expr a
+        Add   : Num a => Expr a -> Expr a -> Expr a
+        Const : Expr a -> Expr b -> Expr a
+
+      interp : Expr a -> a
+      interp (Lit x)     = x
+      interp (Add x y)   = (interp x) + (interp y)
+      interp (Const x y) = const (interp x) (interp y)
+    \end{minted}
+  \end{block}
+  \begin{block}{Why is an embedded DSL `good'?}
+    \begin{itemize}
+      \item It was very easy to write that interpreter.
+      \item The type checker over the meta language takes care of
+        type checking the DSL.
+      \item The meta language also takes care of variable binding.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Zipping over embedded DSLs LYAH style 1.}
+    \begin{minted}[fontsize=\small]{haskell}
+      data Expr : Type -> Type where
+        Lit   : a -> Expr a
+        Add   : Num a => Expr a -> Expr a -> Expr a
+        Const : Expr a -> Expr b -> Expr a
+
+      data Context = Root
+        | L (Expr a) Context
+        | R (Expr a) Context
+
+      left : (Expr a, Context) -> (Expr a, Context)
+      left (Lit x, c)     = (Lit x, c)
+      left (Add x y, c)   = (x, L (Add x y) c)
+      left (Const x y, c) = (x, L (Const x y) c)
+
+      -- the problem comes when trying to write right
+      right : (Expr a, Context) -> (Expr a, Context)
+      right (Lit x, c)     = (Lit x, c)
+      right (Add x y, c)   = (y, R (Add x y) c)
+      right (Const x y, c) = (y, R (Const x y) c)
+    \end{minted}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Zipper over embedded DSLs LYAH style 2.}
+  \begin{block}{Why doesn't this work?}
+    \begin{itemize}
+      \item `left' works fine because the compiler can see
+        that all instances of left result in an `Expr a'.
+      \item `right' cannot typecheck because the compiler
+        sees that it returns an `Expr b' in the `Const' case.
+    \end{itemize}
+  \end{block}
+  \begin{block}{Where to from here?}
+    \begin{itemize}
+      \item There is nothing stopping us from writing a non-sensical
+        context and pairing it up with some expression. We'd like to
+        avoid this.
+      \item There are methods for traversing these well-typed ASTs
+        via higher-order morphisms, they must touch every element of
+        the tree however.
+      \item Lets see where we can get using some dependent types!
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A dependently typed zipper 1.}
+  \begin{block}{Let's start with $\Pi$ types.}
+    \begin{itemize}
+    \item These $\Pi$ types will allow us to calculate the correct type
+          of the context, and keep us honest when developing the zipper.
+    \item Have a look at the `Maybe Type`. It doesn't make sense for us to
+          build a type from going left or right on the `Lit x' case.
+    \end{itemize}
+    \begin{minted}[fontsize=\small]{haskell}
+      GoLeft : Expr a -> Maybe Type
+      GoLeft (Lit x) = Nothing
+      GoLeft (Add {a} x y) = Just a
+      GoLeft (Const {a} x y) = Just a
+
+      GoRight : Expr a -> Maybe Type
+      GoRight (Lit x) = Nothing
+      GoRight (Add {a} x y) = Just a
+      GoRight (Const {b} x y) = Just b
+    \end{minted}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A dependently typed zipper 2.}
+  \begin{block}{Let's re-define the context.}
+    \begin{itemize}
+      \item By parameterising the context over our $\Pi$ types, we
+        ensure that the type checker will fail when we try to build
+        invalid contexts.
+      \item Moving from an ADT to a DDT (GADT) gives us a lot more
+        expressivity here! This is also a strong example of the
+        dependence relationship in the type parameter.
+    \end{itemize}
+    \begin{minted}[fontsize=\small]{haskell}
+data Context : Maybe Type -> Type where
+  Root : Context (Just a)
+  L : (x : Expr a) -> Context (Just a) -> Context (GoLeft x)
+  R : (x : Expr a) -> Context (Just a) -> Context (GoRight x)
+    \end{minted}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A dependently typed zipper 3.}
+  \begin{block}{
 \end{document}
