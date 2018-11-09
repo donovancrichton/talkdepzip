@@ -69,7 +69,7 @@
   \begin{block}{Adding some vectors.}
   \begin{minted}[fontsize=\small]{haskell}
     -- total
-    (+) : Num a => Vect n a -> Vect n a -> Vect n a
+    (+) : Num a => Vec n a -> Vec n a -> Vec n a
     (+) [] [] = []
     (+) (x :: xs) (y :: ys) = x + y :: xs + ys
   \end{minted}
@@ -166,7 +166,7 @@
   \frametitle{A refresher on dependent types 7.}
   \begin{block}{Why are $\Sigma$ and $\Pi$ `good'?}
   \begin{itemize}
-    \item It turns out that the curry-howard isomorphsim
+    \item It turns out that the curry-Howard isomorphsim
       still holds with the introduction of dependent types.
     \item Lets say we have some proof $P$ $x$, using a
       dependent-data-type or a $\Pi$ type is saying $\forall x, P$ $x$.
@@ -254,13 +254,13 @@
     \begin{itemize}
       \item `left' works fine because the compiler can see
         that all instances of left result in an `Expr a'.
-      \item `right' cannot typecheck because the compiler
+      \item `right' cannot type-check because the compiler
         sees that it returns an `Expr b' in the `Const' case.
     \end{itemize}
   \end{block}
   \begin{block}{Where to from here?}
     \begin{itemize}
-      \item There is nothing stopping us from writing a non-sensical
+      \item There is nothing stopping us from writing a nonsensical
         context and pairing it up with some expression. We'd like to
         avoid this.
       \item There are methods for traversing these well-typed ASTs
@@ -362,6 +362,27 @@ right (Just (x ** pf)) =
 
 \begin{frame}[fragile]
   \frametitle{A dependently typed zipper 5.}
+  \begin{block}{Notes on the left and right directions.}
+    \begin{itemize}
+      \item Thanks to the `GoLeft' and `GoRight' $\Pi$ types 
+        we defined earlier. It's not possible to accidentally
+        produce a focus of the incorrect type when implementing
+        `left' and `right'.
+      \item This idea of being unable to produce an incorrect value
+        for a type is where the notions of proofs come from in
+        dependently typed functional languages. We can say that
+        the type is now correct by construction.
+      \item Does the context need to store the full parent 
+        expression? How much do we gain by returning a partially
+        applied constructor? There is more to think about here!
+      \item We need the different constructor tags for the next
+        direction case.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A dependently typed zipper 6.}
   \begin{block}{More direction functions.}
     \begin{minted}[fontsize=\small]{haskell}
 up : Maybe (a : Type ** Zipper a) 
@@ -381,12 +402,122 @@ up (Just (x ** pf)) =
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{A dependently typed zipper 6.}
-  \begin{block}{A note on the use of $\Sigma$ types.}
+  \frametitle{A dependently typed zipper 7.}
+  \begin{block}{\mintinline{haskell}{up} and $\Sigma$ types.}
     \begin{itemize}
-      \item The 
+      \item Remember, we say a function is total when it is defined
+        for all cases and is guaranteed to terminate in finite time.
+      \item $\Pi$ and $\Sigma$ types do not refine if used to define
+        non-total functions in Idris.
+      \item To make `up' total, we must list all the cases, however
+        being able to construct a right and left case of `Lit x' is
+        clearly nonsense! To convince the totality checker we can
+        mark the case as impossible.
+     \item $\Sigma$ types are ideal for when we do not know the 
+       exact type of a function, but we know some properties that
+       the inputs and outputs must adhere to.
     \end{itemize}
   \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A dependently typed zipper 8.}
+  \begin{block}{Substitution and evaluation.}
+  \begin{minted}[fontsize=\small]{haskell}
+subst : (x : (a : Type ** Zipper a)) 
+       -> Expr (fst x) 
+       -> Maybe (a : Type ** Zipper a)
+subst (x ** (Zip x' c)) e = Just (_ ** Zip e c)
+
+data NotNothing : Maybe a -> Type where
+  IsNotNothing : NotNothing (Just x)
+
+fromMaybe : (input : Maybe (a : Type ** Zipper a))
+           -> {auto prf : NotNothing input}
+           -> (a : Type ** Zipper a)
+fromMaybe (Just z) = z
+
+interp : (x : (a : Type ** Zipper a)) -> (fst x)
+interp (x ** (Zip e c)) = eval e
+  \end{minted}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A dependently typed zipper 9.}
+  \begin{block}{Notes on substitution, interpretation and `Just' proofs.}
+    \begin{itemize}
+      \item We write `subst' under the assumption that we have an ordinary
+        $\Sigma$ type parameterised by `a' and a further expression also
+        parameterised by `fst x'. This ensures that the function will calculate
+        the correct type!
+      \item We defined `NotNothing' and `fromMaybe' to give us some tools
+        to access the underlying type parameter. We can also achieve this
+        with more $\Sigma$ types.
+      \item Once we've removed the maybe we can lean on `fst' again to
+        calculate the correct type for our evaluation.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{But...does it actually work?}
+  \begin{minted}[fontsize=\small]{haskell}
+ex1 : Num a => Zipper a
+ex1 = Zip (Const (Lit 2) (Lit "Test")) Root
+-- Zip (Const (Lit 2) (Lit "Test")) Root
+
+ex2 : Maybe (a : Type ** Zipper a)
+ex2 = wrap ex1
+-- Just (Integer ** Zip (Const (Lit 2) (Lit "Test")) Root)
+
+ex3 : Maybe (a : Type ** Zipper a)
+ex3 = right ex2
+-- Just (String ** 
+--   Zip (Lit "Test") (R (Const (Lit 2) (Lit "Test")) Root))
+
+ex4 : Maybe (a : Type ** Zipper a)
+ex4 = up (subst (fromMaybe ex3) (Lit "Hello"))
+-- Just (Integer ** Zip (Const (Lit 2) (Lit "Hello")) Root)
+
+ex5 : (DPair.fst (fromMaybe Main.ex4))
+ex5 = interp (fromMaybe ex4)
+-- 2
+  \end{minted}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Gotchas! (Further work).}
+  \begin{itemize}
+    \item If we're wrapping out $\Sigma$ types with `Maybe' then
+      trying to say something like ``There may possibly exist a type,
+      such that we can build a zipper out of it.'' which reads
+      \mintinline{haskell}{Maybe (a : Type ** Zipper a)}
+    \item It'd probably make more sense to say ``There definitely exists a
+      type, that we may possibly build a zipper out of it.'' which would
+        instead read \mintinline{haskell}{(a : Type ** Maybe (Zipper a))}.
+        This means we could probably avoid the `NotNothing' proof and the
+        `fromMaybe' function.
+    \item How necessary is it to parameterise the context over a `Maybe Type'?
+      We can probably achieve the same results without this!
+    \item This is in no way generic! Our zipping functions, and our context
+      are both tightly coupled to the structure of our DSL. Is there a way we
+      can do better?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{In summary.}
+  \begin{itemize}
+    \item We've shown the implementation of a method to correctly traverse a
+      DDT-embedded DSL, where the types can be calculated at run-time.
+    \item The goal here is to automate this process so that we can perform
+      substitution and other transformations over well-typed expressions
+      automatically.
+    \item While there is still work to be done, hopefully this shows how
+      dependent types can allow for both more rigour when developing software
+      and more expressiveness when defining the types of our functions.
+  \end{itemize}
 \end{frame}
 
 \end{document}
