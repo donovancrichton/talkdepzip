@@ -12,6 +12,9 @@ data Vec : (n : Nat) -> (e : Type) -> Type where
 (+) [] [] = []
 (+) (x :: xs) (y :: ys) = x + y :: xs + ys
 
+len1 : {a : Type} -> {n : Nat} -> Vec n a -> Nat
+len1 xs {n} = n
+
 Age : Type
 Age = Nat
 

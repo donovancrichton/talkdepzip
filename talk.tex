@@ -6,7 +6,8 @@
 \usepackage{tikz}
 \usepackage{upquote}
 \usepackage{hyperref}
-\usetikzlibrary{arrows,automata}
+\usepackage{graphicx}
+\usetikzlibrary{arrows,automata,positioning}
 
 \setbeamertemplate{footline}[frame number]
 \setbeamertemplate{navigation symbols}{}
@@ -36,11 +37,55 @@
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{A refresher on dependent types 1.}
+  \frametitle{Ackknowledgements}
+  \begin{block}{A sincere thank you to..:}
+    \begin{itemize}
+      \item Mr Isaac Elliot (LightAndLight)
+      \item Mr Alex Gryzlov (clayrat)
+      \item The kind people from the Idris channel 
+        on the discord functional programming server!
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A refresher on dependent types 1.}
+  \begin{block}{A note on types and values.}
+    \begin{itemize}
+    \item Types can be functions and functions can be types!
+    \item This takes some getting used to!
+    \end{itemize}
+  \end{block}
+  \begin{minted}[fontsize=\small]{haskell}
+  -- n is a value in the type signature
+  -- n is also used as an argument to refer to that value.
+  len : {a : Type} -> {n : Nat} -> Vec n a -> Nat
+  len xs {n} = n
+  \end{minted}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A refresnher on dependent types 2.}
+  \begin{block}{A note on totality}
+    \begin{itemize}
+      \item Functions can be types.
+      \item Functions need to be evaluated.
+      \item We need a guarantee that our type-checker
+        will eventually stop and give us a type.
+      \item Any functions that are used as a type must be
+        \textbf{total}!
+      \item Total functions are defined for all cases and are guaranteed
+        to terminate in some finite time.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{A refresher on dependent types 3.}
 \begin{itemize}
   \item The most basic definition is a dependent data type (GADT in
           Haskell).
-  \item Dependent data-types depend on being parameterised over a
+  \item Dependent data types (DDT) depend on being parameterised over a
         value for their construction.
   \item Distinguished from parameterised ADTs by the ability to
         specify the return type parameter of each data constructor.
@@ -59,7 +104,7 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{A refresher on dependent types 2.}
+  \frametitle{A refresher on dependent types 4.}
 
   \begin{block}{Why is this `good'?}
    If our length forms part of our type, we gain the ability
@@ -68,7 +113,7 @@
   \end{block}
   \begin{block}{Adding some vectors.}
   \begin{minted}[fontsize=\small]{haskell}
-    -- total
+    -- Is this total? Defined for all cases and terminating?
     (+) : Num a => Vec n a -> Vec n a -> Vec n a
     (+) [] [] = []
     (+) (x :: xs) (y :: ys) = x + y :: xs + ys
@@ -76,24 +121,25 @@
   \end{block}
 \end{frame}
 
+
 \begin{frame}[fragile]
-  \frametitle{A refresher on dependent types 3.}
+  \frametitle{A refresher on dependent types 5.}
   \begin{block}{$\Pi$ types.}
     \begin{itemize}
      \item The $\Pi$ type is a family of types that are indexed by a
            value (hence type families in Haskell).
      \item $\Pi$ types are used to calculate correct return types
              when given a specified value.
-     \item In Idris $\Pi$ types only fully refine if the functions
+     \item In Idris $\Pi$ types only evaluate if the functions
              requiring them are marked as total.
-     \item In Idris functions that return $\Pi$ types don't always refine in 
-             function composition, recursive calls or let bindings.
+     \item In Idris functions that return $\Pi$ types don't always
+       evaluate in function composition, recursive calls or let bindings.
      \end{itemize}
   \end{block}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{A refresher on dependent types 4.}
+  \frametitle{A refresher on dependent types 6.}
   \begin{block}{An example of using $\Pi$ types in Idris.}
   \begin{minted}[fontsize=\small]{haskell}
   Age : Type
@@ -118,27 +164,24 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{A refresher on dependent types 5.}
+  \frametitle{A refresher on dependent types 7.}
   \begin{block}{$\Sigma$ types.}
   \begin{itemize}
     \item $\Sigma$ types are a pairing of a value, and a type that
             depends on that value (They are also called dependent
-                  pairs).
+            pairs).
     \item $\Sigma$ types are useful when you want some basic type
-            inference around dependent types!
-    \item In Idris it is difficult to extract either side of a $\Sigma$
-          type pair. Particularly when that pair is under a
-          constructor.
-    \item Due to the dependent nature of the
-            \mintinline{haskell}{fst} and \mintinline{haskell}{snd}
-            functions on dependent pairs, they cannot be used with
-            ordinary maps, folds, binds etc.
+            calculation around dependent types!
+    \item Idris defines two functions for $\Sigma$ types:
+          \mintinline{haskell}{fst} and \mintinline{haskell}{snd}
+          for extracting the first and second elements of the pair.
+          Similar to an ordinary product type (tuple).
   \end{itemize}
   \end{block}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{A refresher on dependent types 6.}
+  \frametitle{A refresher on dependent types 8.}
   \begin{block}{An example using $\Sigma$ types in Idris.}
   \begin{minted}[fontsize=\small]{haskell}
   data DPair : (a : Type) -> (P : a -> Type) -> Type where
@@ -163,29 +206,74 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{A refresher on dependent types 7.}
+  \frametitle{A refresher on dependent types 9.}
+  \begin{block}{The Curry-Howard Isomorphism.}
+  The CH Isomorphism shows the relationship between mathematical
+    proofs under logic, and computer programs. In idris this
+    relationship can be expressed as follows:
+  \begin{table}[h!]
+    \begin{tabular}{c|c|c|c}
+    \textbf{Logic Term} & \textbf{Logic Symbol} & \textbf{Idris Symbol}
+      & \textbf{Idris Type} \\
+    \hline
+      Implication & p $\Rightarrow$ q & p \mintinline{haskell}{->} q
+      & Function Arrow \\
+      Conjuction & p $\land$ q & \mintinline{haskell}{(p, q)} 
+      & Pair (Product) \\
+      Disjunction & p $\lor$ q & \mintinline{haskell}{Either p q}
+      & Enum (Sum)\\
+      Negation & $\lnot$ p & \mintinline{haskell}{p -> Void} &
+      Void Type \\
+      Equivalence & p $\equiv$ q & \mintinline{haskell}{p = q}
+      & Equality Type \\
+      Universal & $\forall$ x. P x & 
+      \mintinline{haskell}{p -> Type} & $\Pi$ Type \\
+      Existantial & $\exists$ x. P x
+      & \mintinline{haskell}{(x ** P x)} & $\Sigma$ Type
+    \end{tabular}
+    
+  \end{table}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A refresher on dependent types 9.}
   \begin{block}{Why are $\Sigma$ and $\Pi$ `good'?}
   \begin{itemize}
-    \item It turns out that the curry-Howard isomorphsim
-      still holds with the introduction of dependent types.
-    \item Lets say we have some proof $P$ $x$, using a
-      dependent-data-type or a $\Pi$ type is saying $\forall x, P$ $x$.
-      Using a $\Sigma$ type is saying $\exists x, P$ $x$.
-    \item This brings the isomorphic logic from propositional logic
-      to first-order or predicate logic, allowing us to write proofs
-      in our code (more on this later).
+    \item $\Pi$ types let us map types to values.
+    \item We can now be more precise about function values.
+    \item $\Sigma$ types let us specify properties of types, even
+      when we may not know the exact return type at compile time.
+    \item `properties' includes both $\Pi$ types, and types that are
+      parameterised over other types.
+    \item This will become much clearer later!
   \end{itemize}
   \end{block}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Dependent data-type embedded DSLs 1.}
+  \frametitle{Motivation}
+  \begin{itemize}
+    \item Came from a research project on the automatic generation of 
+      well-typed functions to solve a given problem.
+    \item We'd like to substitute values at specific positions on
+      the expression tree.
+    \item We may not know the value at the position during runtime
+      (but we may know its type).
+    \item A zipper allows the specification of a position in a tree
+      via a path of transformations or rotations.
+    \item We'd like to exchage values of the same type at different
+      positions between two trees.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Dependent data type embedded DSLs 1.}
   \begin{block}{A quick review of DSLs}
     \begin{itemize}
       \item Short for Domain Specific Language.
       \item Used in lots of places, salary calculations, query and
         markup languages, business logic, etc.
-      \item Used very much in programming language research!
     \end{itemize}
   \end{block}
   \begin{block}{A DDT (or GADT) embedded DSL}
@@ -199,7 +287,7 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Dependent data-type embedded DSLs 2.}
+  \frametitle{Dependent data type embedded DSLs 2.}
   \begin{block}{An embedded DSL and it's interpreter.}
     \begin{minted}[fontsize=\small]{haskell}
       data Expr : (a : Type) -> Type where
@@ -224,7 +312,32 @@
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{Zipping over embedded DSLs LYAH style 1.}
+  \frametitle{Dependent data type embedded DSLs 3.}
+  \begin{block}{Expressions as Trees}
+  \mintinline{haskell}{Const (Add (Lit 2) (Lit 3)) (Lit "Test"))}
+  \begin{center}
+    \begin{tikzpicture}
+      \node[shape=circle, draw=black, minimum size = 1.5cm] (Exp) {Const} ;
+      \node[shape=circle, draw=black, minimum size = 1.5cm] (Add) 
+           [below left = 2cm of Exp] {$+$};
+      \node[shape=circle, draw=black, minimum size = 1.5cm] (2) 
+           [below left = 2cm of Add] {2};
+      \node[shape=circle, draw=black, minimum size = 1.5cm] (3)
+           [below right = 2cm of Add] {3};
+      \node[shape=circle, draw=black, minimum size = 1.5cm] (Test)
+           [below right = 2cm of Exp] {``Test''};
+
+      \path [-] (Exp) edge node {} (Add);
+      \path [-] (Exp) edge node {} (Test);
+      \path [-] (Add) edge node {} (2);
+      \path [-] (Add) edge node {} (3);
+     \end{tikzpicture}
+  \end{center}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Zipping over embedded DSLs LYAH style (Naive).}
     \begin{minted}[fontsize=\small]{haskell}
       data Expr : Type -> Type where
         Lit   : a -> Expr a
@@ -249,7 +362,7 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Zipper over embedded DSLs LYAH style 2.}
+  \frametitle{Zipper over embedded DSLs LYAH style 2 (Naive).}
   \begin{block}{Why doesn't this work?}
     \begin{itemize}
       \item `left' works fine because the compiler can see
@@ -261,16 +374,98 @@
   \begin{block}{Where to from here?}
     \begin{itemize}
       \item There is nothing stopping us from writing a nonsensical
-        context and pairing it up with some expression. We'd like to
-        avoid this.
-      \item There are methods for traversing these well-typed ASTs
-        via higher-order morphisms, they must touch every element of
-        the tree however.
+        context and pairing it up with some expression. We'd like 
+        some stronger guarantees here.
       \item Lets see where we can get using some dependent types!
     \end{itemize}
   \end{block}
 \end{frame}
 
+\begin{frame}[fragile]
+  \frametitle{Some Intuition.}
+  \begin{block}{Going right down the expression tree.}
+  \mintinline{haskell}{Const (Add (Lit 2) (Lit 3)) (Lit "Test")} \\
+  Let C represent Const. Let T represent ``Test''. \\
+  \end{block}
+  \begin{tikzpicture}
+    %Tree 1
+     \begin{scope}[every node/.style={circle,thick,draw}]
+       \node[label={Integer}, draw=blue, text=blue] (const) at (-6,0) {C};
+       \node (add) at (-7,-2) {+};
+       \node (test) at (-5,-2) {T};
+       \node (2) at (-8,-4) {2};
+       \node (3) at (-6,-4) {3};
+    \end{scope}
+
+    \begin{scope}[every edge/.style={draw,thick, circle},
+       every node/.style={circle}]
+      \path (const) edge (add);
+      \path (const) edge (test);
+      \path (add) edge (2);
+      \path (add) edge (3);
+    \end{scope}
+
+    %Tree 2
+     \begin{scope}[every node/.style={circle,thick,draw}]
+       \node (const) at (0,0) {C};
+       \node (add) at (-1,-2) {+};
+       \node[label={String},text=blue, draw=blue] (test) at (1,-2) {T};
+       \node (2) at (-2,-4) {2};
+       \node (3) at (0,-4) {3};
+    \end{scope}
+
+    \begin{scope}[every edge/.style={draw,thick, circle},
+       every node/.style={circle}]
+      \path (const) edge (add);
+      \path (const) edge (test);
+      \path (add) edge (2);
+      \path (add) edge (3);
+    \end{scope}
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{More Intuition.}
+  \begin{block}{Going left down the expression tree.}
+  \mintinline{haskell}{Const (Add (Lit 2) (Lit 3)) (Lit "Test")} \\
+  Let C represent Const. Let T represent ``Test''. \\
+  \end{block}
+  \begin{tikzpicture}
+    %Tree 1
+     \begin{scope}[every node/.style={circle,thick,draw}]
+       \node[label={Integer}, draw=blue, text=blue] (const) at (-6,0) {C};
+       \node (add) at (-7,-2) {+};
+       \node (test) at (-5,-2) {T};
+       \node (2) at (-8,-4) {2};
+       \node (3) at (-6,-4) {3};
+    \end{scope}
+
+    \begin{scope}[every edge/.style={draw,thick, circle},
+       every node/.style={circle}]
+      \path (const) edge (add);
+      \path (const) edge (test);
+      \path (add) edge (2);
+      \path (add) edge (3);
+    \end{scope}
+
+    %Tree 2
+     \begin{scope}[every node/.style={circle,thick,draw}]
+       \node (const) at (0,0) {C};
+       \node[label={Integer}, draw=blue, text=blue] (add) at (-1,-2) {+};
+       \node (test) at (1,-2) {T};
+       \node (2) at (-2,-4) {2};
+       \node (3) at (0,-4) {3};
+    \end{scope}
+
+    \begin{scope}[every edge/.style={draw,thick, circle},
+       every node/.style={circle}]
+      \path (const) edge (add);
+      \path (const) edge (test);
+      \path (add) edge (2);
+      \path (add) edge (3);
+    \end{scope}
+  \end{tikzpicture}
+\end{frame}
 \begin{frame}[fragile]
   \frametitle{A dependently typed zipper 1.}
   \begin{block}{Let's start with $\Pi$ types.}
@@ -368,10 +563,7 @@ right (Just (x ** pf)) =
         we defined earlier. It's not possible to accidentally
         produce a focus of the incorrect type when implementing
         `left' and `right'.
-      \item This idea of being unable to produce an incorrect value
-        for a type is where the notions of proofs come from in
-        dependently typed functional languages. We can say that
-        the type is now correct by construction.
+      \item We can say that the type is now correct by construction.
       \item Does the context need to store the full parent 
         expression? How much do we gain by returning a partially
         applied constructor? There is more to think about here!
@@ -422,6 +614,12 @@ up (Just (x ** pf)) =
 
 \begin{frame}[fragile]
   \frametitle{A dependently typed zipper 8.}
+  \begin{block}{A graphical representation of `subst'}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A dependently typed zipper 9.}
   \begin{block}{Substitution and evaluation.}
   \begin{minted}[fontsize=\small]{haskell}
 subst : (x : (a : Type ** Zipper a)) 
@@ -444,7 +642,7 @@ interp (x ** (Zip e c)) = eval e
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{A dependently typed zipper 9.}
+  \frametitle{A dependently typed zipper 10.}
   \begin{block}{Notes on substitution, interpretation and `Just' proofs.}
     \begin{itemize}
       \item We write `subst' under the assumption that we have an ordinary
