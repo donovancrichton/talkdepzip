@@ -37,7 +37,7 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Ackknowledgements}
+  \frametitle{Acknowledgements}
   \begin{block}{A sincere thank you to..:}
     \begin{itemize}
       \item Mr Isaac Elliot (LightAndLight)
@@ -65,7 +65,7 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{A refresnher on dependent types 2.}
+  \frametitle{A refresher on dependent types 2.}
   \begin{block}{A note on totality}
     \begin{itemize}
       \item Functions can be types.
@@ -86,7 +86,7 @@
   \item The most basic definition is a dependent data type (GADT in
           Haskell).
   \item Dependent data types (DDT) depend on being parameterised over a
-        value for their construction.
+        type for their construction.
   \item Distinguished from parameterised ADTs by the ability to
         specify the return type parameter of each data constructor.
 \end{itemize}
@@ -97,7 +97,7 @@
 
   data Vec : (n : Nat) -> (e : Type) -> Type where
     Nil : Vec Z e
-    (::) : (x : e) -> (xs : Vec n e) -> Vec (S Z) e
+    (::) : (x : e) -> (xs : Vec n e) -> Vec (S n) e
 \end{minted}
 \end{block}
 \end{minipage}
@@ -207,9 +207,9 @@
 
 \begin{frame}[fragile]
   \frametitle{A refresher on dependent types 9.}
-  \begin{block}{The Curry-Howard Isomorphism.}
-  The CH Isomorphism shows the relationship between mathematical
-    proofs under logic, and computer programs. In idris this
+  \begin{block}{The Curry-Howard Isomorphsim.}
+  The CH Isomorphsim shows the relationship between mathematical
+    proofs under logic, and computer programs. In Idris this
     relationship can be expressed as follows:
   \begin{table}[h!]
     \begin{tabular}{c|c|c|c}
@@ -218,7 +218,7 @@
     \hline
       Implication & p $\Rightarrow$ q & p \mintinline{haskell}{->} q
       & Function Arrow \\
-      Conjuction & p $\land$ q & \mintinline{haskell}{(p, q)} 
+      Conjunction & p $\land$ q & \mintinline{haskell}{(p, q)} 
       & Pair (Product) \\
       Disjunction & p $\lor$ q & \mintinline{haskell}{Either p q}
       & Enum (Sum)\\
@@ -228,7 +228,7 @@
       & Equality Type \\
       Universal & $\forall$ x. P x & 
       \mintinline{haskell}{p -> Type} & $\Pi$ Type \\
-      Existantial & $\exists$ x. P x
+      Existential & $\exists$ x. P x
       & \mintinline{haskell}{(x ** P x)} & $\Sigma$ Type
     \end{tabular}
     
@@ -258,11 +258,11 @@
       well-typed functions to solve a given problem.
     \item We'd like to substitute values at specific positions on
       the expression tree.
-    \item We may not know the value at the position during runtime
+    \item We may not know the value at the position during run-time
       (but we may know its type).
     \item A zipper allows the specification of a position in a tree
       via a path of transformations or rotations.
-    \item We'd like to exchage values of the same type at different
+    \item We'd like to exchange values of the same type at different
       positions between two trees.
   \end{itemize}
 \end{frame}
@@ -564,17 +564,25 @@ right (Just (x ** pf)) =
         produce a focus of the incorrect type when implementing
         `left' and `right'.
       \item We can say that the type is now correct by construction.
-      \item Does the context need to store the full parent 
-        expression? How much do we gain by returning a partially
-        applied constructor? There is more to think about here!
-      \item We need the different constructor tags for the next
-        direction case.
     \end{itemize}
   \end{block}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{A dependently typed zipper 6.}
+  \begin{block}{Gotchas in the context?}
+    \begin{itemize}
+      \item Do we need to store the full parent expression?
+      \item Can we get away with returning a partially applied function?
+      \item What would we gain or lose? There is more to think about!
+      \item The left and right constructors are used in the next direction
+        case.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A dependently typed zipper 7.}
   \begin{block}{More direction functions.}
     \begin{minted}[fontsize=\small]{haskell}
 up : Maybe (a : Type ** Zipper a) 
@@ -594,28 +602,63 @@ up (Just (x ** pf)) =
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{A dependently typed zipper 7.}
+  \frametitle{A dependently typed zipper 8.}
   \begin{block}{\mintinline{haskell}{up} and $\Sigma$ types.}
     \begin{itemize}
       \item Remember, we say a function is total when it is defined
         for all cases and is guaranteed to terminate in finite time.
       \item $\Pi$ and $\Sigma$ types do not refine if used to define
         non-total functions in Idris.
-      \item To make `up' total, we must list all the cases, however
-        being able to construct a right and left case of `Lit x' is
-        clearly nonsense! To convince the totality checker we can
-        mark the case as impossible.
-     \item $\Sigma$ types are ideal for when we do not know the 
-       exact type of a function, but we know some properties that
-       the inputs and outputs must adhere to.
+      \item To make `up' total, we must list all the cases!
+      \item Some cases are clearly nonsense though!
+      \item We can mark those as impossible in Idris to keep the
+        function total.
     \end{itemize}
   \end{block}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{A dependently typed zipper 8.}
+  \frametitle{A dependently typed zipper 9.}
   \begin{block}{A graphical representation of `subst'}
+  \mintinline{haskell}{Const (Add (Lit 2) (Lit 3)) (Lit "Test")}
+  Let C represent Const.
+  Let T represent "Test'. Let H represent "Hello".
   \end{block}
+  \begin{tikzpicture}
+    %Tree 1
+     \begin{scope}[every node/.style={circle,thick,draw}]
+       \node (const) at (-6,0) {C};
+       \node (add) at (-7,-2) {+};
+       \node[draw=blue,text=blue] (test) at (-5,-2) {T};
+       \node (2) at (-8,-4) {2};
+       \node (3) at (-6,-4) {3};
+    \end{scope}
+
+    \begin{scope}[every edge/.style={draw,thick, circle},
+       every node/.style={circle}]
+      \path (const) edge (add);
+      \path (const) edge (test);
+      \path (add) edge (2);
+      \path (add) edge (3);
+    \end{scope}
+
+    %Tree 2
+     \begin{scope}[every node/.style={circle,thick,draw}]
+       \node (const) at (0,0) {C};
+       \node (add) at (-1,-2) {+};
+       \node[draw=blue,text=blue] (test) at (1,-2) {H};
+       \node (2) at (-2,-4) {2};
+       \node (3) at (0,-4) {3};
+    \end{scope}
+
+    \begin{scope}[every edge/.style={draw,thick, circle},
+       every node/.style={circle}]
+      \path (const) edge (add);
+      \path (const) edge (test);
+      \path (add) edge (2);
+      \path (add) edge (3);
+    \end{scope}
+  \end{tikzpicture}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -624,7 +667,7 @@ up (Just (x ** pf)) =
   \begin{minted}[fontsize=\small]{haskell}
 subst : (x : (a : Type ** Zipper a)) 
        -> Expr (fst x) 
-       -> Maybe (a : Type ** Zipper a)
+       -> Maybe (b : Type ** Zipper b)
 subst (x ** (Zip x' c)) e = Just (_ ** Zip e c)
 
 data NotNothing : Maybe a -> Type where
@@ -641,22 +684,20 @@ interp (x ** (Zip e c)) = eval e
   \end{block}
 \end{frame}
 
-\begin{frame}[fragile]
-  \frametitle{A dependently typed zipper 10.}
-  \begin{block}{Notes on substitution, interpretation and `Just' proofs.}
-    \begin{itemize}
-      \item We write `subst' under the assumption that we have an ordinary
-        $\Sigma$ type parameterised by `a' and a further expression also
-        parameterised by `fst x'. This ensures that the function will calculate
-        the correct type!
-      \item We defined `NotNothing' and `fromMaybe' to give us some tools
-        to access the underlying type parameter. We can also achieve this
-        with more $\Sigma$ types.
-      \item Once we've removed the maybe we can lean on `fst' again to
-        calculate the correct type for our evaluation.
-    \end{itemize}
-  \end{block}
-\end{frame}
+%\begin{frame}[fragile]
+%  \frametitle{A dependently typed zipper 10.}
+%  \begin{block}{Notes on substitution, interpretation and `Just' proofs.}
+%    \begin{itemize}
+%      \item We write `subst' under the assumption that we have an ordinary
+%        $\Sigma$ type parameterised by `a' and a further expression also
+%        parameterised by `fst x'. This ensures that the function will calculate
+%        the correct type!
+%      \item We defined `NotNothing' and `fromMaybe' to give us some tools
+%        to access the underlying type parameter. We can also achieve this
+%        with more $\Sigma$ types.
+%    \end{itemize}
+%  \end{block}
+%\end{frame}
 
 \begin{frame}[fragile]
   \frametitle{But...does it actually work?}
@@ -687,20 +728,15 @@ ex5 = interp (fromMaybe ex4)
 \begin{frame}[fragile]
   \frametitle{Gotchas! (Further work).}
   \begin{itemize}
-    \item If we're wrapping out $\Sigma$ types with `Maybe' then
-      trying to say something like ``There may possibly exist a type,
-      such that we can build a zipper out of it.'' which reads
-      \mintinline{haskell}{Maybe (a : Type ** Zipper a)}
-    \item It'd probably make more sense to say ``There definitely exists a
-      type, that we may possibly build a zipper out of it.'' which would
-        instead read \mintinline{haskell}{(a : Type ** Maybe (Zipper a))}.
-        This means we could probably avoid the `NotNothing' proof and the
-        `fromMaybe' function.
+    \item The $\Sigma$ type \mintinline{haskell}{Maybe (a : Type ** Zipper a)}
+      is not really idiomatic.
+    \item It's more correct to have \mintinline{haskell}{(a : Type ** Zipper a
+      ** Maybe (Zipper a))}
+    \item This is more cumbersome in some ways to work with, and harder to
+      grasp if unfamiliar with $\Sigma$ types.
     \item How necessary is it to parameterise the context over a `Maybe Type'?
-      We can probably achieve the same results without this!
     \item This is in no way generic! Our zipping functions, and our context
-      are both tightly coupled to the structure of our DSL. Is there a way we
-      can do better?
+      are both tightly coupled to the structure of our DSL. 
   \end{itemize}
 \end{frame}
 
@@ -709,13 +745,37 @@ ex5 = interp (fromMaybe ex4)
   \begin{itemize}
     \item We've shown the implementation of a method to correctly traverse a
       DDT-embedded DSL, where the types can be calculated at run-time.
-    \item The goal here is to automate this process so that we can perform
-      substitution and other transformations over well-typed expressions
-      automatically.
-    \item While there is still work to be done, hopefully this shows how
-      dependent types can allow for both more rigour when developing software
-      and more expressiveness when defining the types of our functions.
+    \item This is working towards the automated generation of well-typed
+      expressions.
+    \item Dependent types allow us to use our type-checker as a proof-checker.
+    \item Dependent types also allow us to reduce the number of invalid
+      programs.
   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Resources.}
+  \begin{block}{Dependent Types}
+    \begin{itemize}
+      \item B-trees with GADTS by Matthew Brecknel: 
+        https://www.youtube.com/watch?v=VIeZW4TSSHg (Talk)
+      \item Type-Driven Development with Idris - Edwin Brady (Book).
+      \item The Little Typer - Daniel P. Friedman and David Thrane Christiansen
+        (Book).
+    \end{itemize}
+  \end{block}
+  \begin{block}{Curry Howard Isomorphsim}
+    \begin{itemize}
+      \item Propositions as Types - Phillip Wadler (Paper).
+    \end{itemize}
+  \end{block}
+  \begin{block}{Theorem Proving with Dependent Types}
+    \begin{itemize}
+      \item Software Foundations 
+        https://softwarefoundations.cis.upenn.edu/
+        (Book Series)
+    \end{itemize}
+  \end{block}
 \end{frame}
 
 \end{document}
