@@ -231,7 +231,7 @@
       Existential & $\exists$ x. P x
       & \mintinline{haskell}{(x ** P x)} & $\Sigma$ Type \\
       \hline
-      Equivalence & $\equiv$ & \mintinline{haskell}{p = q} & Type Equality
+      Equivalence & p $\equiv$ q & \mintinline{haskell}{p = q} & Type Equality
     \end{tabular}
     
   \end{table}
@@ -733,8 +733,8 @@ ex5 = interp (fromMaybe ex4)
   \begin{itemize}
     \item The $\Sigma$ type \mintinline{haskell}{Maybe (a : Type ** Zipper a)}
       is not really idiomatic.
-    \item It's more correct to have \mintinline{haskell}{(a : Type ** Zipper a
-      ** Maybe (Zipper a))}
+    \item It's more correct to have 
+      \mintinline{haskell}{(a : Type ** Zipper a ** Maybe (Zipper a))}
     \item This is more cumbersome in some ways to work with, and harder to
       grasp if unfamiliar with $\Sigma$ types.
     \item How necessary is it to parameterise the context over a `Maybe Type'?
